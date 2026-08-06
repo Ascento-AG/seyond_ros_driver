@@ -70,6 +70,7 @@ struct LidarConfig {
   bool replay_rosbag = false;
   bool packet_mode = false;
   bool enable_imu_msg = false;
+  bool use_ros_time = true;
   int32_t aggregate_num = 20;
 
   std::string frame_id = "seyond";

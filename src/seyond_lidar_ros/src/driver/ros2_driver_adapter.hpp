@@ -115,9 +115,13 @@ class ROSAdapter {
       driver_ptr_->transform_pointcloud();
       pcl::toROSMsg(*driver_ptr_->pcl_pc_ptr, ros_msg);
       ros_msg.header.frame_id = lidar_config_.frame_id;
-      int64_t ts_ns = msg->timestamp * 1000;
-      ros_msg.header.stamp.sec = ts_ns / 1000000000;
-      ros_msg.header.stamp.nanosec = ts_ns % 1000000000;
+      if (lidar_config_.use_ros_time) {
+        ros_msg.header.stamp = node_ptr_->get_clock()->now();
+      } else {
+        int64_t ts_ns = msg->timestamp * 1000;
+        ros_msg.header.stamp.sec = ts_ns / 1000000000;
+        ros_msg.header.stamp.nanosec = ts_ns % 1000000000;
+      }
       ros_msg.width = driver_ptr_->pcl_pc_ptr->points.size();
       ros_msg.height = 1;
       inno_frame_pub_->publish(std::move(ros_msg));
@@ -159,9 +163,13 @@ class ROSAdapter {
     sensor_msgs::msg::PointCloud2 ros_msg;
     pcl::toROSMsg(frame, ros_msg);
     ros_msg.header.frame_id = lidar_config_.frame_id;
-    int64_t ts_ns = timestamp * 1000;
-    ros_msg.header.stamp.sec = ts_ns / 1000000000;
-    ros_msg.header.stamp.nanosec = ts_ns % 1000000000;
+    if (lidar_config_.use_ros_time) {
+      ros_msg.header.stamp = node_ptr_->get_clock()->now();
+    } else {
+      int64_t ts_ns = timestamp * 1000;
+      ros_msg.header.stamp.sec = ts_ns / 1000000000;
+      ros_msg.header.stamp.nanosec = ts_ns % 1000000000;
+    }
     ros_msg.width = frame.width;
     ros_msg.height = frame.height;
     inno_frame_pub_->publish(std::move(ros_msg));
@@ -269,6 +277,7 @@ class ROSNode {
     node_ptr_->get_parameter_or<int32_t>("multiple_return", lidar_config.multiple_return, 1);
     node_ptr_->get_parameter_or<bool>("enable_falcon_ring", lidar_config.enable_falcon_ring, false);
     node_ptr_->get_parameter_or<bool>("enable_imu_msg", lidar_config.enable_imu_msg, false);
+    node_ptr_->get_parameter_or<bool>("use_ros_time", lidar_config.use_ros_time, true);
 
     node_ptr_->get_parameter_or<bool>("continue_live", lidar_config.continue_live, false);
 

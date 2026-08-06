@@ -80,6 +80,7 @@ struct LidarConfig {
   int32_t multiple_return;
   bool enable_falcon_ring;
   bool enable_imu_msg;
+  bool use_ros_time = true;
 
   bool continue_live;
 

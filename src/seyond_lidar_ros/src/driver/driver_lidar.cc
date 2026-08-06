@@ -40,7 +40,6 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 constexpr uint64_t KBUF_SIZE = 1024 * 1024 * 10;
 constexpr double us_in_second_c = 1000000.0;
-constexpr double ten_us_in_second_c = 100000.0;
 
 namespace seyond {
 
@@ -526,7 +525,6 @@ void DriverLidar::convert_and_parse(const InnoDataPacket *pkt) {
 }
 
 void DriverLidar::data_packet_parse(const InnoDataPacket *pkt) {
-  // calculate the point timestamp
   current_ts_start_ = pkt->common.ts_start_us / us_in_second_c;
   // adapt different data structures form different lidar
   if (CHECK_EN_XYZ_POINTCLOUD_DATA(pkt->type)) {
@@ -570,7 +568,9 @@ void DriverLidar::point_xyz_data_parse(bool is_use_refl, uint32_t point_num, Poi
     point.scan_idx = point_ptr->scan_idx;
     point.flags = point_ptr->channel | roi | (point_ptr->facet << 3);
     point.is_2nd_return = point_ptr->is_2nd_return;
-    point.timestamp = point_ptr->ts_10us / ten_us_in_second_c + current_ts_start_;
+    // Offset from frame_start_ts_ in nanoseconds
+    point.timestamp = static_cast<uint32_t>(
+        ((current_ts_start_ * us_in_second_c - frame_start_ts_) + point_ptr->ts_10us * 10.0) * 1000.0);
 #endif
     coordinate_transfer(&point, param_.coordinate_mode, point_ptr->x, point_ptr->y, point_ptr->z);
     pcl_pc_ptr->points.push_back(point);

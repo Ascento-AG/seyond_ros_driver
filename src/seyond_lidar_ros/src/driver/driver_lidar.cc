@@ -31,6 +31,7 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <assert.h>
 
+#include <cstring>
 #include <thread>
 #include <utility>
 
@@ -40,6 +41,7 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 constexpr uint64_t KBUF_SIZE = 1024 * 1024 * 10;
 constexpr double us_in_second_c = 1000000.0;
+constexpr const char *kFalseBandwidthWarning = "bandwidth too low";
 
 namespace seyond {
 
@@ -252,7 +254,10 @@ void DriverLidar::init_log_s(std::string &log_limit,
 
 void DriverLidar::lidar_log_callback_s(void *ctx, enum InnoLogLevel level, const char *header1, const char *header2,
                                        const char *msg) {
-  DriverLidar::ros_log_cb_s_(static_cast<int32_t>(level), header2, msg);
+  // The SDK's fixed 3 MB/s read threshold sits above the D1-R's nominal ~2 MB/s, so it fires on a healthy stream.
+  const bool is_false_bandwidth_warning = msg != nullptr && std::strstr(msg, kFalseBandwidthWarning) != nullptr;
+  const int32_t ros_level = is_false_bandwidth_warning ? INNO_LOG_LEVEL_TRACE : static_cast<int32_t>(level);
+  DriverLidar::ros_log_cb_s_(ros_level, header2, msg);
 }
 
 void DriverLidar::start_lidar() {
